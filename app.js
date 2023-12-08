@@ -1,3 +1,4 @@
+import "dotenv/config";
 import fs from "fs/promises";
 import express from "express";
 import Joi from "joi";
@@ -15,11 +16,11 @@ import {
 } from "./utils/filestorage.js";
 import { v4 } from "uuid";
 
-const PORT = 9696;
+const PORT = process.env.PORT;
 const app = express();
 const storage = multer.memoryStorage();
 const DIR = "./uploads/";
-const upload = multer({ storage });
+const upload = multer({ dest: DIR });
 setup();
 setup2();
 
@@ -51,37 +52,38 @@ app.post("/api/characters", upload.single("imglink"), (req, res) => {
     res.status(418).json({ message: error.message });
     return;
   }
-
   character = value;
-
-  fileTypeFromBuffer(req.file.buffer)
-    .then((data) => {
-      const path = DIR + v4() + "." + data.ext;
-      console.log("Path=>", path);
-      console.log("buffer=>", req.file.buffer);
-      fs.writeFile(path, req.file.buffer);
-      return path;
-    })
-    .then((data) => {
-      character.imglink = data;
-      console.log("data=>", data);
-      console.log("Wir checken unseren Character", character);
-      saveCharacter(character);
-      res.end();
-    })
-    .catch((err) => res.status(500).end(err));
+  // fileTypeFromBuffer(req.file.buffer)
+  //   .then((data) => {
+  //     const path = DIR + v4() + "." + data.ext;
+  //     console.log("Path=>", path);
+  //     console.log("buffer=>", req.file.buffer);
+  //     fs.writeFile(path, req.file.buffer);
+  //     return path;
+  //   })
+  // .then((data) => {
+  character.imglink = req.file.path;
+  // console.log("data=>", data);
+  console.log("Wir checken unseren Character", character);
+  saveCharacter(character);
+  res.end();
 });
-app.delete("/api/characters", (req, res) => {
+// .catch((err) => res.status(500).end(err));
+// });
+app.delete("/api/characters", upload.single("imglink"), (req, res) => {
   const id = req.body.id;
+  console.log("********** id=>", id);
   deleteCharacter(id)
     .then(() => res.end())
     .catch((err) => res.status(500).end(err));
 });
 
 app.put("/api/characters", upload.single("imglink"), (req, res) => {
+  console.log("Ich bin da");
   console.log(req.body);
   const newCharacter = req.body;
   if (req.file) {
+    console.log("Von app.js=> ", req.file.path);
     newCharacter.imglink = req.file.path;
   }
   editCharacter(newCharacter)
@@ -93,8 +95,8 @@ app.put("/api/characters", upload.single("imglink"), (req, res) => {
 });
 
 app.get("/api/characters/:id", (req, res) => {
-  console.log("Ich bin da");
   const { id } = req.params;
+  console.log("get id");
   getCharacter(id)
     .then((item) => {
       console.log(item);

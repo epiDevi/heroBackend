@@ -52,28 +52,37 @@ export function getCharacter(id) {
     .readFile("./" + DB + "/" + id)
     .then((data) => JSON.parse(data.toString()));
 }
+
 // wir löschen eine datei anhand der id die ja auch gleichzeitig der dateiname ist
 export function deleteCharacter(id) {
   return getCharacter(id)
-    .then((character) => fs.rm(character.imglink))
+    .then((character) => {
+      console.log("character.imglink", character.imglink);
+      fs.rm("./" + character.imglink);
+    })
     .then(() => fs.rm("./" + DB + "/" + id));
 }
 
 export function editCharacter(character) {
+  console.log("Ich bin in Edit");
   return fs
     .readFile("./" + DB + "/" + character.id)
     .then((oldData) => {
+      oldData = JSON.parse(oldData);
+      //console.log("oldData.imglink =>", JSON.parse(oldData));
       if (character.imglink) deleteImage(oldData.imglink);
       return oldData;
     })
-    .then((oldItem) =>
+    .then((oldItem) => {
+      console.log(("old item =>", oldItem));
       fs.writeFile(
         "./" + DB + "/" + oldItem.id,
-        JSON.stringify(...oldItem, ...item)
-      )
-    );
+        JSON.stringify({ ...oldItem, ...character })
+      );
+    });
 }
 
 function deleteImage(path) {
+  console.log("path=>", path);
   fs.rm("./" + path);
 }
